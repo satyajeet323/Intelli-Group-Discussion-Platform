@@ -42,7 +42,7 @@ jobs:
 
       - name: Execute rollback (staging)
         if: inputs.environment == 'staging'
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Execute rollback (production)
         if: inputs.environment == 'production'
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
