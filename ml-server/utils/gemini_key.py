@@ -80,8 +80,13 @@ def gemini_generate(prompt: str) -> str:
     if not key:
         raise ValueError("No active Gemini API key.")
 
-    current_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
-    candidate_models = list(dict.fromkeys([current_model, "gemini-flash-latest", "gemini-3.8-flash"]))
+    current_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    candidate_models = list(dict.fromkeys([
+        current_model,
+        "gemini-flash-lite-latest",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.5-flash",
+    ]))
     last_exc = None
 
     for model in candidate_models:

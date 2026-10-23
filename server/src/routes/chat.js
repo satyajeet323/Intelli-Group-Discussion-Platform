@@ -77,9 +77,10 @@ async function callGemini(apiKey, topic, messages) {
   fullPrompt += "\nRespond with valid JSON containing 'reply' and 'scores' fields as specified.";
 
   const candidateModels = [
-    process.env.GEMINI_MODEL || "gemini-3.5-flash",
-    "gemini-flash-latest",
-    "gemini-3.8-flash",
+    process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3.5-flash",
   ].filter((m, i, arr) => arr.indexOf(m) === i);
 
   let lastError = null;

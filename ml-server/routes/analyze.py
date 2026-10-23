@@ -57,24 +57,7 @@ async def analyze_transcript(req: TranscriptScoreRequest):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
-        log.warning("Transcript scoring failed (%s), returning metrics-based fallback", exc)
-        prosody = req.prosody or {}
-        fillers = prosody.get("fillers", 0)
-        fillers_score = 10 if fillers == 0 else max(2, 10 - (fillers * 2))
-        score = {
-            "vocabulary_score": 7,
-            "grammar_score": 8,
-            "sentence_correctness_score": 8,
-            "coherence_score": 7,
-            "clarity_score": 8,
-            "relevance_score": 8,
-            "grammatical_mistake": "No critical grammatical errors detected in audio segment.",
-            "improvement_needed": "Continue practicing structured delivery and smooth transitions.",
-            "speech_rate_score": 8,
-            "pause_time_score": 7,
-            "pitch_variability_score": 7,
-            "rhythm_variability_score": 7,
-            "fillers_score": fillers_score,
-        }
+        log.error("Transcript scoring failed: %s", exc)
+        raise HTTPException(502, f"Transcript scoring failed: {exc}") from exc
 
     return {"score": score}
