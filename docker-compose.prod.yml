@@ -1,0 +1,117 @@
+# ============================================================
+# docker-compose.prod.yml — Production environment
+# ============================================================
+version: "3.9"
+
+services:
+  # ── ML microservice ────────────────────────────────────────────────────────
+  ml-server:
+    image: ${REGISTRY}/${IMAGE_PREFIX}/ml-server:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NODE_SERVER_URL=http://backend-node:4000
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - PYTHONUNBUFFERED=1
+      - ML_PORT=8000
+    volumes:
+      - ml-temp:/app/temp
+      - ml-temp-audio:/app/temp_audio
+      - ml-segments:/app/segments_temp
+      - ml-reports:/app/reports
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 15s
+      start_period: 90s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ── Node.js backend ────────────────────────────────────────────────────────
+  backend-node:
+    image: ${REGISTRY}/${IMAGE_PREFIX}/backend-node:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+      - ADMIN_JWT_SECRET=${ADMIN_JWT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - CLIENT_ORIGINS=${CLIENT_ORIGINS}
+      - ML_SERVER_URL=http://ml-server:8000
+      - NODE_SERVER_URL=http://backend-node:4000
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - BCRYPT_ROUNDS=12
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      ml-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  frontend:
+    image: ${REGISTRY}/${IMAGE_PREFIX}/frontend:${IMAGE_TAG:-latest}
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend-node:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  uploads:
+  ml-temp:
+  ml-temp-audio:
+  ml-segments:
+  ml-reports:
+
+networks:
+  default:
+    name: gdplatform-prod
+    driver: bridge

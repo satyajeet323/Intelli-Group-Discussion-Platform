@@ -1,0 +1,46 @@
+[server] Uncaught exception: listen EADDRINUSE: address already in use :::4000
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[db] Connection failed: querySrv ETIMEOUT _mongodb._tcp.gd-bot.urbrlwv.mongodb.net
+[db] Retrying in 5 seconds…
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms
+[scheduler] Error: Operation `notifications.find()` buffering timed out after 10000ms

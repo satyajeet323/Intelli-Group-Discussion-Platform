@@ -1,0 +1,10 @@
+[nltk_data] Error loading punkt: <urlopen error [WinError 10013] An
+[nltk_data]     attempt was made to access a socket in a way forbidden
+[nltk_data]     by its access permissions>
+[nltk_data] Error loading punkt_tab: <urlopen error [WinError 10013]
+[nltk_data]     An attempt was made to access a socket in a way
+[nltk_data]     forbidden by its access permissions>
+INFO:     Started server process [16616]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

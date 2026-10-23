@@ -1,0 +1,14 @@
+{
+  "profile": "balanced",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "branching": false,
+    "plan_review_convergence": false
+  },
+  "runtime": {
+    "node_version": "20.x",
+    "python_version": "3.10+"
+  }
+}
