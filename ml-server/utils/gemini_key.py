@@ -13,23 +13,34 @@ import threading
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+# Ensure .env is loaded from ml-server/ and fallback to server/
+_UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
+_ML_DIR = os.path.dirname(_UTILS_DIR)
+_ROOT_DIR = os.path.dirname(_ML_DIR)
+load_dotenv(os.path.join(_ML_DIR, ".env"))
+load_dotenv(os.path.join(_ROOT_DIR, "server", ".env"))
 
-# Read config directly from env — no ml_server.config import needed here
-_NODE_URL     = os.getenv("NODE_SERVER_URL", "http://localhost:4000")
-_INT_SECRET   = os.getenv("INTERNAL_SERVICE_SECRET") or os.getenv("JWT_SECRET", "")
-_CACHE_TTL    = int(os.getenv("GEMINI_API_KEY_TTL", "30"))
-_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+_CACHE_TTL = int(os.getenv("GEMINI_API_KEY_TTL", "30"))
 
 _lock:   threading.Lock = threading.Lock()
 _cached: dict           = {"value": None, "ts": 0.0}
 
 
+def _get_node_url() -> str:
+    return os.getenv("NODE_SERVER_URL", "http://localhost:4000")
+
+
+def _get_internal_secret() -> str:
+    return os.getenv("INTERNAL_SERVICE_SECRET") or os.getenv("JWT_SECRET", "")
+
+
 def _fetch_from_node() -> str | None:
     try:
+        node_url = _get_node_url()
+        secret = _get_internal_secret()
         resp = requests.get(
-            f"{_NODE_URL}/api/admin/api-keys/internal/active-key/gemini",
-            headers={"x-internal-secret": _INT_SECRET},
+            f"{node_url}/api/admin/api-keys/internal/active-key/gemini",
+            headers={"x-internal-secret": secret},
             timeout=3,
         )
         if resp.status_code == 200:
@@ -69,7 +80,8 @@ def gemini_generate(prompt: str) -> str:
     if not key:
         raise ValueError("No active Gemini API key.")
 
-    candidate_models = list(dict.fromkeys([_GEMINI_MODEL, "gemini-flash-latest", "gemini-3.8-flash"]))
+    current_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+    candidate_models = list(dict.fromkeys([current_model, "gemini-flash-latest", "gemini-3.8-flash"]))
     last_exc = None
 
     for model in candidate_models:
