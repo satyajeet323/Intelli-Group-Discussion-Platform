@@ -146,25 +146,8 @@ def score_transcript_sync(topic: str, transcript: str, prosody: dict) -> dict:
         result = json.loads(m.group(0))
         return result
     except Exception as e:
-        log.warning("Gemini transcript scoring failed, using metrics-based fallback: %s", e)
-        fillers = prosody.get("fillers", 0)
-        fillers_score = 10 if fillers == 0 else max(2, 10 - (fillers * 2))
-        rel_int = int(round(relevance_score)) if isinstance(relevance_score, (int, float)) else 8
-        return {
-            "vocabulary_score": 7,
-            "grammar_score": 8,
-            "sentence_correctness_score": 8,
-            "coherence_score": 7,
-            "clarity_score": 8,
-            "relevance_score": max(1, min(10, rel_int)),
-            "grammatical_mistake": "No critical grammatical errors detected in audio segment.",
-            "improvement_needed": "Continue practicing structured delivery and smooth transitions.",
-            "speech_rate_score": 8,
-            "pause_time_score": 7,
-            "pitch_variability_score": 7,
-            "rhythm_variability_score": 7,
-            "fillers_score": fillers_score,
-        }
+        log.error("Gemini transcript scoring failed: %s", e)
+        raise RuntimeError(f"Gemini transcript scoring failed: {e}") from e
 
 
 async def score_transcript_async(topic: str, transcript: str, prosody: dict) -> dict:

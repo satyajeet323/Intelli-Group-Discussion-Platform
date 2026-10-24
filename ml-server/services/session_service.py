@@ -102,32 +102,10 @@ def evaluate_session_sync(
             analysis = _parse_json(raw2)
         except Exception as e2:
             log.error("Session analysis attempt 2 failed: %s", e2)
-            # Graceful fallback based on session metrics so report is never lost
-            score = min(10, max(5, round(6 + (turns * 0.4))))
-            analysis = {
-                "overallScore": score,
-                "summary": f"Completed {turns} speaking turn(s) with {word_count} total words on '{topic}'.",
-                "strengths": [
-                    "Direct participation and engagement on the topic.",
-                    f"Contributed {turns} distinct responses to the conversation.",
-                    f"Maintained an average turn length of ~{avg_wpt} words."
-                ],
-                "weaknesses": [
-                    "Elaborate further on key arguments with supporting evidence.",
-                    "Incorporate more nuanced counter-perspectives into speaking turns."
-                ],
-                "grammarSuggestions": [],
-                "contextualRelevance": f"Stayed relevant to the topic of '{topic}'.",
-                "communicationFeedback": f"You actively engaged in the discussion regarding '{topic}'. To enhance impact in professional GDs, expand on your core points with concrete examples and structured arguments.",
-                "improvements": [
-                    "Back claims with specific facts, statistics, or examples.",
-                    "Ask open-ended follow-up questions to lead the discussion.",
-                    "Structure longer responses with clear premises and conclusions."
-                ],
-                "vocabularyScore": 7,
-                "clarityScore": 8,
-                "engagementScore": min(10, max(5, turns * 2))
-            }
+            raise RuntimeError(f"Session evaluation failed via Gemini API: {e2}") from e2
+
+    if not analysis:
+        raise RuntimeError("Gemini API failed to return valid analysis for session evaluation.")
 
     minutes = (duration_seconds or 0) // 60
     secs    = (duration_seconds or 0) %  60

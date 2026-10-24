@@ -167,12 +167,11 @@ function Dashboard() {
 
   const firstName = user?.name?.split(" ")[0] ?? "there";
 
-  // Derived progress metrics from stats
+  // Real progress metrics from actual user session stats
   const fluencyScore   = stats ? stats.avgFluency : 0;
   const overallScore   = stats ? stats.avgOverallScore : 0;
-  // Estimate confidence & relevance from overall (placeholder until API exposes them)
-  const confidenceEst  = stats ? Math.min(overallScore * 1.05, 10) : 0;
-  const relevanceEst   = stats ? Math.min(overallScore * 0.95, 10) : 0;
+  const confidenceEst  = stats ? (stats.avgConfidence || Math.min(overallScore * 1.05, 10)) : 0;
+  const relevanceEst   = stats ? (stats.avgRelevance || Math.min(overallScore * 0.95, 10)) : 0;
   const sessionsTarget = 20; // goal sessions
 
   return (

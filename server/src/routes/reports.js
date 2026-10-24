@@ -16,6 +16,7 @@
 import { Router } from "express";
 import { body, param } from "express-validator";
 import { Session } from "../models/Session.js";
+import { Evaluation } from "../models/Evaluation.js";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -117,6 +118,30 @@ router.post(
         }
         await session.save();
         console.log(`[reports] Auto-ended individual session ${sessionId}`);
+      }
+
+      // Persist dedicated evaluation record
+      try {
+        await Evaluation.findOneAndUpdate(
+          { userId, sessionId },
+          {
+            userId,
+            sessionId,
+            type: session.type,
+            topic: session.topic,
+            duration: session.duration,
+            turns: parseInt(turns, 10),
+            overallScore,
+            vocabularyScore: parseFloat(relevance),
+            clarityScore: parseFloat(confidence),
+            engagementScore: parseFloat(fluency),
+            summary: feedback ?? autoFeedback,
+            communicationFeedback: aiFeedback ?? "",
+          },
+          { upsert: true, new: true }
+        );
+      } catch (evalErr) {
+        console.warn("[reports] Failed to upsert Evaluation model:", evalErr.message);
       }
 
       console.log(

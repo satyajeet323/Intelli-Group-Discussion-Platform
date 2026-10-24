@@ -19,6 +19,7 @@ const reportSchema = new mongoose.Schema(
     peerScore:    { type: Number, min: 0, max: 10, default: null },
     peerFeedback: { type: String, default: "" },
     combinedScore:{ type: Number, min: 0, max: 10, default: null },
+    analysis:     { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { _id: false }
 );
@@ -84,7 +85,7 @@ const sessionSchema = new mongoose.Schema(
       default: "group",
     },
     topic:        { type: String, required: true, trim: true },
-    topicSource:  { type: String, enum: ["gemini", "local"], default: "local" },
+    topicSource:  { type: String, enum: ["gemini", "local"], default: "gemini" },
     hostId:       { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     maxParticipants: { type: Number, default: 12, min: 1, max: 50 },
     participants: { type: [participantSchema], default: [] },

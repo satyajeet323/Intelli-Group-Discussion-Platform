@@ -1,16 +1,19 @@
 /**
- * aiSession.js — AI Session routes
+ * aiSession.js AI Session routes
  *
- * POST /api/ai-session/start    — Generate topic + opening AI message
- * POST /api/ai-session/turn     — Send user transcript, get AI response
- * POST /api/ai-session/report   — Delegate session evaluation to ML service
+ * POST /api/ai-session/start     Generate topic + opening AI message
+ * POST /api/ai-session/turn      Send user transcript, get AI response
+ * POST /api/ai-session/report    Delegate session evaluation to ML service
  */
 
 import { Router } from "express";
+import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import { generateTopic } from "../topics.js";
 import Groq from "groq-sdk";
 import { evaluateSession } from "../services/mlClient.js";
+import { Session } from "../models/Session.js";
+import { Evaluation } from "../models/Evaluation.js";
 
 const router = Router();
 
@@ -61,9 +64,10 @@ async function callGeminiRest(systemPrompt, messages) {
   fullPrompt += "\nAssistant:";
 
   const candidateModels = [
-    process.env.GEMINI_MODEL || "gemini-3.5-flash",
-    "gemini-flash-latest",
-    "gemini-3.8-flash",
+    process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3.5-flash",
   ].filter((m, i, arr) => arr.indexOf(m) === i);
 
   let lastError = null;
@@ -204,7 +208,7 @@ router.post("/turn", requireAuth, async (req, res) => {
 // ── POST /api/ai-session/report ───────────────────────────────────────────────
 router.post("/report", requireAuth, async (req, res) => {
   try {
-    const { topic, history, durationSeconds } = req.body;
+    const { topic, history, durationSeconds, sessionId: clientSessionId } = req.body;
 
     if (!topic || !history?.length) {
       return res.status(400).json({ success: false, message: "topic and history are required." });
@@ -213,9 +217,116 @@ router.post("/report", requireAuth, async (req, res) => {
     // Delegate all ML-based evaluation to the FastAPI ML service
     const { report } = await evaluateSession(topic, history, durationSeconds ?? 0);
 
-    res.json({ success: true, report });
+    // Ensure evaluations are unique to each user and session
+    const sessionId = (
+      clientSessionId || `AI-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
+    ).toUpperCase();
+
+    const duration = durationSeconds ?? 0;
+    const startedAt = new Date(Date.now() - duration * 1000);
+    const endedAt = new Date();
+
+    const participantReport = {
+      fluency: Number(report.analysis?.clarityScore ?? report.analysis?.overallScore ?? 0),
+      relevance: Number(report.analysis?.overallScore ?? 0),
+      confidence: Number(report.analysis?.engagementScore ?? report.analysis?.overallScore ?? 0),
+      fillerWords: 0,
+      turns: Number(report.turns ?? 0),
+      overallScore: Number(report.analysis?.overallScore ?? 0),
+      feedback: report.analysis?.summary ?? "",
+      aiFeedback: report.analysis?.communicationFeedback ?? "",
+      analysis: report.analysis ?? null,
+    };
+
+    // 1. Save or update Session document so user history & stats reflect the session
+    let session = await Session.findOne({ sessionId });
+    if (!session) {
+      session = await Session.create({
+        sessionId,
+        type: "individual",
+        topic,
+        topicSource: "gemini",
+        hostId: req.user.id,
+        maxParticipants: 1,
+        status: "ended",
+        startedAt,
+        endedAt,
+        duration,
+        participants: [
+          {
+            userId: req.user.id,
+            name: req.user.name,
+            email: req.user.email,
+            joinedAt: startedAt,
+            leftAt: endedAt,
+            isActive: false,
+            report: participantReport,
+          },
+        ],
+        messages: history.map((m) => ({
+          senderId: m.role === "user" ? req.user.id.toString() : "intellibot",
+          senderName: m.role === "user" ? req.user.name : "IntelliBot",
+          text: m.content,
+          ts: new Date(),
+        })),
+      });
+    } else {
+      session.status = "ended";
+      session.endedAt = endedAt;
+      session.duration = duration;
+      const pIdx = session.participants.findIndex(
+        (p) => p.userId?.toString() === req.user.id
+      );
+      if (pIdx !== -1) {
+        session.participants[pIdx].report = participantReport;
+        session.participants[pIdx].isActive = false;
+        session.participants[pIdx].leftAt = endedAt;
+      } else {
+        session.participants.push({
+          userId: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          joinedAt: startedAt,
+          leftAt: endedAt,
+          isActive: false,
+          report: participantReport,
+        });
+      }
+      await session.save();
+    }
+
+    // 2. Save structured record in Evaluation collection
+    await Evaluation.findOneAndUpdate(
+      { userId: req.user.id, sessionId },
+      {
+        userId: req.user.id,
+        sessionId,
+        type: "individual",
+        topic,
+        duration,
+        turns: report.turns ?? 0,
+        transcript: report.transcript ?? "",
+        overallScore: report.analysis?.overallScore ?? 0,
+        vocabularyScore: report.analysis?.vocabularyScore ?? 0,
+        clarityScore: report.analysis?.clarityScore ?? 0,
+        engagementScore: report.analysis?.engagementScore ?? 0,
+        summary: report.analysis?.summary ?? "",
+        strengths: report.analysis?.strengths ?? [],
+        weaknesses: report.analysis?.weaknesses ?? [],
+        grammarSuggestions: report.analysis?.grammarSuggestions ?? [],
+        improvements: report.analysis?.improvements ?? [],
+        contextualRelevance: report.analysis?.contextualRelevance ?? "",
+        communicationFeedback: report.analysis?.communicationFeedback ?? "",
+        rawReport: report,
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log(`[ai-session] Saved report to MongoDB for user ${req.user.email} (session: ${sessionId})`);
+
+    res.json({ success: true, sessionId, report });
   } catch (err) {
-    console.error("[ai-session] report:", err.message);
+    console.error("[ai-session] report error:", err.message);
     const status = err.status ?? 500;
     res.status(status).json({ success: false, message: err.message });
   }
