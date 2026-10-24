@@ -1,5 +1,5 @@
 /**
- * admin/notifications.js — Full notification management with analytics,
+ * admin/notifications.js  Full notification management with analytics,
  * scheduling, targeting, real-time delivery, and read receipts.
  *
  * Route order matters: /stats and other literal paths MUST come before /:id
@@ -52,7 +52,7 @@ async function deliverNotification(notif, io) {
   return users.length;
 }
 
-// ── GET / — list with pagination + filters ────────────────────────────────────
+// ── GET /  list with pagination + filters ────────────────────────────────────
 router.get("/", requirePermission("notifications.view"), async (req, res) => {
   try {
     const page     = Math.max(1, parseInt(req.query.page     ?? "1"));
@@ -80,7 +80,7 @@ router.get("/", requirePermission("notifications.view"), async (req, res) => {
   }
 });
 
-// ── GET /stats — aggregate counts (MUST be before /:id) ──────────────────────
+// ── GET /stats  aggregate counts (MUST be before /:id) ──────────────────────
 router.get("/stats", requirePermission("notifications.view"), async (req, res) => {
   try {
     const [total, sent, draft, scheduled, active, cancelled,
@@ -112,7 +112,7 @@ router.get("/stats", requirePermission("notifications.view"), async (req, res) =
   }
 });
 
-// ── POST / — create ───────────────────────────────────────────────────────────
+// ── POST /  create ───────────────────────────────────────────────────────────
 router.post(
   "/",
   requirePermission("notifications.create"),

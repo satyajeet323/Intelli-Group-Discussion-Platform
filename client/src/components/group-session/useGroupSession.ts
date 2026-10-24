@@ -71,7 +71,18 @@ function getNameFromToken(): string {
 export function useGroupSession(sessionId: string, userId?: string) {
 
   const [participants,    setParticipants]    = useState<Participant[]>([]);
-  const [chatMessages,    setChatMessages]    = useState<ChatMessage[]>([]);
+  const [chatMessages,    setChatMessages]    = useState<ChatMessage[]>(() => {
+    try {
+      const saved = sessionStorage.getItem(`group-chat-${sessionId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [status,          setStatus]          = useState<ConnectionStatus>("connecting");
   const [audioEnabled,    setAudioEnabled]    = useState(true);
   const [videoEnabled,    setVideoEnabled]    = useState(true);
@@ -624,7 +635,14 @@ export function useGroupSession(sessionId: string, userId?: string) {
         (currentUserId && msg.senderId === currentUserId) ||
         msg.senderId === socket.id
       );
-      setChatMessages(prev => [...prev, { ...msg, isOwn }]);
+      setChatMessages(prev => {
+        if (prev.some(m => m.id === msg.id)) return prev;
+        const next = [...prev, { ...msg, isOwn }];
+        try {
+          sessionStorage.setItem(`group-chat-${sessionId}`, JSON.stringify(next));
+        } catch { /* ignore */ }
+        return next;
+      });
     });
 
     // ── Cleanup ────────────────────────────────────────────────────────────

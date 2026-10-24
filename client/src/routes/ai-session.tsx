@@ -137,7 +137,7 @@ function ScoreCard({ label, value }: { label: string; value: number }) {
 function AISessionPage() {
   const {
     phase, topic, messages, liveTranscript, elapsedSeconds,
-    report, isGeneratingReport, error, isTTSAvailable, startSession, endSession, toggleListening,
+    report, isGeneratingReport, error, isTTSAvailable, startSession, endSession, toggleListening, resetSession,
   } = useAISession();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -382,7 +382,7 @@ function AISessionPage() {
             </div>
 
             <div className="flex justify-center pt-4 pb-8">
-              <button onClick={() => window.location.reload()} className="btn-ghost inline-flex items-center gap-2">
+              <button onClick={resetSession} className="btn-ghost inline-flex items-center gap-2">
                 <RotateCcw className="h-4 w-4" /> Start New Session
               </button>
             </div>
@@ -412,7 +412,7 @@ function AISessionPage() {
                 Session ended. Start a new one to get a full report.
               </p>
             )}
-            <button onClick={() => window.location.reload()} className="btn-ghost inline-flex items-center gap-2">
+            <button onClick={resetSession} className="btn-ghost inline-flex items-center gap-2">
               <RotateCcw className="h-4 w-4" /> Start New Session
             </button>
           </div>

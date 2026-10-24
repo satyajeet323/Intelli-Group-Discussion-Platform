@@ -67,6 +67,7 @@ export interface UseAISessionReturn {
   startSession: (category?: string) => Promise<void>;
   endSession: () => Promise<void>;
   toggleListening: () => void;
+  resetSession: () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -536,6 +537,28 @@ export function useAISession(): UseAISessionReturn {
     };
   }, [stopListening, stopTimer]);
 
+  // ── Reset session ──────────────────────────────────────────────────────────
+  const resetSession = useCallback(() => {
+    ttsAbortRef.current?.abort();
+    ttsAbortRef.current = null;
+    stopListening();
+    stopTimer();
+    audioRef.current?.pause();
+    audioRef.current = null;
+    window.speechSynthesis?.cancel();
+    setPhase("idle");
+    phaseRef.current = "idle";
+    setTopic("");
+    topicRef.current = "";
+    historyRef.current = [];
+    setMessages([]);
+    setLiveTranscript("");
+    setElapsedSeconds(0);
+    setReport(null);
+    setIsGeneratingReport(false);
+    setError(null);
+  }, [stopListening, stopTimer]);
+
   return {
     phase,
     topic,
@@ -549,5 +572,6 @@ export function useAISession(): UseAISessionReturn {
     startSession,
     endSession,
     toggleListening,
+    resetSession,
   };
 }

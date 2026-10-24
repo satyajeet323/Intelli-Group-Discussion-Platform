@@ -1,5 +1,5 @@
 /**
- * admin/users.js — User management routes.
+ * admin/users.js User management routes.
  */
 
 import { Router } from "express";
@@ -12,7 +12,7 @@ import { validate } from "../../middleware/validate.js";
 
 const router = Router();
 
-// GET /api/admin/users — list with search/filter/pagination
+// GET /api/admin/users list with search/filter/pagination
 router.get(
   "/",
   requirePermission("users.view"),
@@ -136,7 +136,7 @@ router.get("/:id", requirePermission("users.view"), async (req, res) => {
   }
 });
 
-// PATCH /api/admin/users/:id — edit user
+// PATCH /api/admin/users/:id edit user
 router.patch(
   "/:id",
   requirePermission("users.edit"),

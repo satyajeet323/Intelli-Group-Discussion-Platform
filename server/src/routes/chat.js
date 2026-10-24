@@ -1,11 +1,11 @@
 /**
- * chat.js — AI discussion chat endpoint.
+ * chat.js AI discussion chat endpoint.
  *
  * POST /api/chat/gd
  *
  * Uses Gemini (gemini-3.7-flash) via new Interactions API for AI responses + per-turn scoring.
- * Groq removed — key was returning 403 Forbidden.
- * Returns 503 if Gemini fails — no local fallback.
+ * Groq removed key was returning 403 Forbidden.
+ * Returns 503 if Gemini fails no local fallback.
  */
 
 import { Router } from "express";
@@ -43,7 +43,7 @@ Return ONLY valid JSON in this exact format:
     "relevance": 8.0,
     "confidence": 7.0,
     "fillerWords": 2,
-    "feedback": "Good point — try to support it with a specific example."
+    "feedback": "Good point try to support it with a specific example."
   }
 }`;
 }

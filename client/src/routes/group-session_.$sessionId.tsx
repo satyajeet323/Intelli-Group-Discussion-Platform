@@ -28,12 +28,7 @@ function GroupSessionRoom() {
   // Read topic from sessionStorage (set by host when creating the session),
   // or fetch it from the API, or fall back to a generated topic.
   const [topic, setTopic] = useState<string>(() => {
-    const stored = sessionStorage.getItem(`topic-${sessionId}`);
-    if (stored) {
-      sessionStorage.removeItem(`topic-${sessionId}`);
-      return stored;
-    }
-    return "";
+    return sessionStorage.getItem(`topic-${sessionId}`) || "";
   });
   const navigate = useNavigate();
   const { user } = useCurrentUser();
@@ -44,31 +39,54 @@ function GroupSessionRoom() {
 
   // Fetch topic from API if not already set from sessionStorage
   useEffect(() => {
-    if (topic) return; // already have it
     let cancelled = false;
 
     // Try to get topic from the session record first
     sessionsApi.get(sessionId)
       .then((res) => {
-        const t = (res.session as { topic?: string }).topic;
-        if (!cancelled && t) setTopic(t);
+        const t = (res.session as { topic?: string })?.topic;
+        if (!cancelled && t) {
+          setTopic(t);
+          sessionStorage.setItem(`topic-${sessionId}`, t);
+        }
       })
       .catch(() => {
         // Fall back to generating a topic
-        if (!cancelled) {
+        if (!cancelled && !topic) {
           topicsApi.generate()
-            .then((res) => { if (!cancelled) setTopic(res.topic); })
+            .then((res) => {
+              if (!cancelled && res.topic) {
+                setTopic(res.topic);
+                sessionStorage.setItem(`topic-${sessionId}`, res.topic);
+              }
+            })
             .catch(() => {});
         }
       });
 
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, topic]);
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const sessionStartRef = useRef<number>(Date.now());
+
+  // Preserve session start time across tab refreshes
+  const getInitialStartTime = () => {
+    const key = `session-start-${sessionId}`;
+    try {
+      const stored = sessionStorage.getItem(key);
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= Date.now()) return parsed;
+      }
+      const now = Date.now();
+      sessionStorage.setItem(key, String(now));
+      return now;
+    } catch {
+      return Date.now();
+    }
+  };
+  const sessionStartRef = useRef<number>(getInitialStartTime());
 
   const {
     participants,
@@ -84,15 +102,16 @@ function GroupSessionRoom() {
     sendChatMessage,
   } = useGroupSession(sessionId, user?._id);
 
-  // Intercept browser back / close while session is active
+  // Intercept browser back / close ONLY while session is active
   useEffect(() => {
+    if ((status !== "connected" && status !== "connecting") || showPeerRating) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+  }, [status, showPeerRating]);
 
   const confirmLeave = useCallback(async () => {
     const myId = user?._id;
@@ -164,6 +183,13 @@ function GroupSessionRoom() {
       // If API call fails, skip peer rating
     }
 
+    // Clean up session-specific keys from sessionStorage
+    try {
+      sessionStorage.removeItem(`topic-${sessionId}`);
+      sessionStorage.removeItem(`session-start-${sessionId}`);
+      sessionStorage.removeItem(`group-chat-${sessionId}`);
+    } catch { /* ignore */ }
+
     // Signal the dashboard to refetch stats (streak, session count, etc.)
     document.dispatchEvent(new Event("session-ended"));
     navigate({ to: "/group-session" });
@@ -171,13 +197,18 @@ function GroupSessionRoom() {
   }, [navigate, sessionId, user, chatMessages]);
 
   const handlePeerRatingDone = useCallback(() => {
+    try {
+      sessionStorage.removeItem(`topic-${sessionId}`);
+      sessionStorage.removeItem(`session-start-${sessionId}`);
+      sessionStorage.removeItem(`group-chat-${sessionId}`);
+    } catch { /* ignore */ }
     setShowPeerRating(false);
     // Fire a custom event so the dashboard refetches stats even if it was
     // already mounted (e.g. user opened session in same tab)
     document.dispatchEvent(new Event("session-ended"));
     navigate({ to: "/dashboard" });
     toast.success("Session ended — check History for your report.");
-  }, [navigate]);
+  }, [navigate, sessionId]);
 
   const copySessionId = async () => {
     await navigator.clipboard.writeText(sessionId);

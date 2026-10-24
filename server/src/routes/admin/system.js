@@ -1,5 +1,5 @@
 /**
- * admin/system.js — System config, feature flags, rate limits, health.
+ * admin/system.js System config, feature flags, rate limits, health.
  */
 
 import { Router } from "express";

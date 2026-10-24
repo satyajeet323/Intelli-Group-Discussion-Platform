@@ -1,8 +1,9 @@
 /**
- * admin/index.js — Mounts all admin sub-routers under /api/admin
+ * admin/index.js Mounts all admin sub-routers under /api/admin
  */
 
 import { Router } from "express";
+import { requireAdmin } from "../../middleware/adminAuth.js";
 import adminAuthRoutes    from "./auth.js";
 import adminUserRoutes    from "./users.js";
 import adminRoleRoutes    from "./roles.js";
@@ -16,6 +17,15 @@ import adminAdminsRoutes  from "./admins.js";
 import adminApiKeysRoutes from "./apiKeys.js";
 
 const router = Router();
+
+// Top-level admin verification guard:
+// Every route under /api/admin (except legacy /auth/login) requires admin authentication
+router.use((req, res, next) => {
+  if (req.path === "/auth/login") {
+    return next();
+  }
+  return requireAdmin(req, res, next);
+});
 
 router.use("/auth",          adminAuthRoutes);
 router.use("/users",         adminUserRoutes);

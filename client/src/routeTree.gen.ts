@@ -17,6 +17,7 @@ import { Route as GroupSessionRouteImport } from './routes/group-session'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AiSessionRouteImport } from './routes/ai-session'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ReportSessionIdRouteImport } from './routes/report.$sessionId'
 import { Route as GroupSessionSessionIdRouteImport } from './routes/group-session_.$sessionId'
 import { Route as GdSessionIdRouteImport } from './routes/gd.$sessionId'
@@ -72,6 +73,11 @@ const AiSessionRoute = AiSessionRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportSessionIdRoute = ReportSessionIdRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/gd/$sessionId': typeof GdSessionIdRoute
   '/group-session/$sessionId': typeof GroupSessionSessionIdRoute
   '/report/$sessionId': typeof ReportSessionIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -190,7 +197,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/admin': typeof AdminLayoutRoute
+  '/admin': typeof AdminIndexRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/api-keys': typeof AdminApiKeysRoute
@@ -233,6 +240,7 @@ export interface FileRoutesById {
   '/gd/$sessionId': typeof GdSessionIdRoute
   '/group-session_/$sessionId': typeof GroupSessionSessionIdRoute
   '/report/$sessionId': typeof ReportSessionIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -261,6 +269,7 @@ export interface FileRouteTypes {
     | '/gd/$sessionId'
     | '/group-session/$sessionId'
     | '/report/$sessionId'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/gd/$sessionId'
     | '/group-session_/$sessionId'
     | '/report/$sessionId'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -340,6 +350,7 @@ export interface RootRouteChildren {
   GdSessionIdRoute: typeof GdSessionIdRoute
   GroupSessionSessionIdRoute: typeof GroupSessionSessionIdRoute
   ReportSessionIdRoute: typeof ReportSessionIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -398,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report/$sessionId': {
@@ -540,6 +558,7 @@ const rootRouteChildren: RootRouteChildren = {
   GdSessionIdRoute: GdSessionIdRoute,
   GroupSessionSessionIdRoute: GroupSessionSessionIdRoute,
   ReportSessionIdRoute: ReportSessionIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

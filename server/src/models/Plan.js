@@ -1,5 +1,5 @@
 /**
- * Plan.js — Subscription plans managed by admins.
+ * Plan.js Subscription plans managed by admins.
  */
 
 import { mongoose } from "../db.js";

@@ -1,5 +1,5 @@
 /**
- * admin/audit.js — Audit log viewer.
+ * admin/audit.js Audit log viewer.
  */
 
 import { Router } from "express";

@@ -1,18 +1,50 @@
 /**
- * auth.js — Authentication routes.
+ * auth.js Authentication routes.
  *
- * POST /api/auth/register  — Create account
- * POST /api/auth/login     — Login, returns JWT
- * GET  /api/auth/me        — Get current user (requires token)
+ * POST /api/auth/register  Create account
+ * POST /api/auth/login     Login, returns JWT
+ * GET  /api/auth/me        Get current user (requires token)
  */
 
 import { Router } from "express";
 import { body } from "express-validator";
 import { User } from "../models/User.js";
+import { AdminUser } from "../models/AdminUser.js";
+import { AdminRole } from "../models/AdminRole.js";
+import { PERMISSIONS } from "../models/permissions.js";
 import { signToken, requireAuth } from "../middleware/auth.js";
+import { signAdminToken } from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.js";
 
 const router = Router();
+
+// Helper to ensure an AdminUser record exists for an admin
+async function ensureAdminUserRecord(user, password = "") {
+  let adminUser = await AdminUser.findOne({ email: user.email.toLowerCase() }).populate("role");
+  if (!adminUser) {
+    let superRole = await AdminRole.findOne({ name: "Super Admin" });
+    if (!superRole) {
+      superRole = await AdminRole.create({
+        name: "Super Admin",
+        description: "Full access to all platform features",
+        color: "#ef4444",
+        permissions: [...PERMISSIONS],
+        isSystem: true,
+      });
+    }
+    const adminPassword = password || user.password || "AdminInitialPass@123!";
+    adminUser = await AdminUser.create({
+      name: user.name,
+      email: user.email.toLowerCase(),
+      password: adminPassword,
+      role: superRole._id,
+      isSuperAdmin: true,
+      isActive: true,
+    });
+    adminUser.role = superRole;
+  }
+  return adminUser;
+}
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 router.post(
@@ -32,10 +64,11 @@ router.post(
         return res.status(409).json({ success: false, message: "Email already registered." });
       }
 
-      const user = await User.create({ name, email, password });
+      // Securely store role: always assign "user" as the default role during public registration
+      const user = await User.create({ name, email, password, role: "user" });
       const token = signToken(user);
 
-      console.log(`[auth] Registered: ${email}`);
+      console.log(`[auth] Registered: ${email} (role: user)`);
       res.status(201).json({ success: true, token, user });
     } catch (err) {
       console.error("[auth] Register error:", err.message);
@@ -56,9 +89,35 @@ router.post(
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email });
+      let user = await User.findOne({ email });
+
+      // If user does not exist in User collection, check if they exist in AdminUser (e.g. seeded super admin)
+      if (!user) {
+        const adminUser = await AdminUser.findOne({ email }).populate("role");
+        if (adminUser) {
+          const match = await adminUser.comparePassword(password);
+          if (!match) {
+            return res.status(401).json({ success: false, message: "Invalid email or password." });
+          }
+          if (!adminUser.isActive) {
+            return res.status(403).json({ success: false, message: "Account suspended." });
+          }
+          // Sync into User model with role: "admin"
+          user = await User.create({
+            name: adminUser.name,
+            email: adminUser.email,
+            password,
+            role: "admin",
+          });
+        }
+      }
+
       if (!user) {
         return res.status(401).json({ success: false, message: "Invalid email or password." });
+      }
+
+      if (user.isSuspended) {
+        return res.status(403).json({ success: false, message: "Account suspended." });
       }
 
       const match = await user.comparePassword(password);
@@ -66,9 +125,19 @@ router.post(
         return res.status(401).json({ success: false, message: "Invalid email or password." });
       }
 
+      let adminToken = null;
+      if (user.role === "admin") {
+        const adminUser = await ensureAdminUserRecord(user, password);
+        adminToken = signAdminToken(adminUser);
+      }
+
       const token = signToken(user);
-      console.log(`[auth] Login: ${email}`);
-      res.json({ success: true, token, user });
+      const userObj = user.toObject();
+      delete userObj.password;
+      userObj.isAdmin = user.role === "admin";
+
+      console.log(`[auth] Login: ${email} (role: ${user.role})`);
+      res.json({ success: true, token, adminToken, user: userObj });
     } catch (err) {
       console.error("[auth] Login error:", err.message);
       res.status(500).json({ success: false, message: "Login failed." });
@@ -85,13 +154,19 @@ router.get("/me", requireAuth, async (req, res) => {
     const userObj = user.toObject();
     userObj.isAdmin = user.role === "admin";
 
-    res.json({ success: true, user: userObj });
+    let adminToken = null;
+    if (user.role === "admin") {
+      const adminUser = await ensureAdminUserRecord(user);
+      adminToken = signAdminToken(adminUser);
+    }
+
+    res.json({ success: true, user: userObj, adminToken });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch user." });
   }
 });
 
-// ── PATCH /api/auth/profile — Update name / password ─────────────────────────
+// ── PATCH /api/auth/profile Update name / password ─────────────────────────
 router.patch(
   "/profile",
   requireAuth,
@@ -138,7 +213,7 @@ router.patch(
   }
 );
 
-// ── PATCH /api/auth/preferences — Update user preferences ────────────────────
+// ── PATCH /api/auth/preferences Update user preferences ────────────────────
 router.patch(
   "/preferences",
   requireAuth,

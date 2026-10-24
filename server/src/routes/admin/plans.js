@@ -1,5 +1,5 @@
 /**
- * admin/plans.js — Subscription plan management.
+ * admin/plans.js Subscription plan management.
  */
 
 import { Router } from "express";

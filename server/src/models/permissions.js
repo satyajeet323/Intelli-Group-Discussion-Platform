@@ -1,5 +1,5 @@
 /**
- * permissions.js — All admin permission strings.
+ * permissions.js All admin permission strings.
  * Kept in a separate file to avoid circular imports between AdminUser ↔ AdminRole.
  */
 

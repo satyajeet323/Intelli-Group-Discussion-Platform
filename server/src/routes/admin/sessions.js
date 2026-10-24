@@ -1,5 +1,5 @@
 /**
- * admin/sessions.js — Session monitoring and management.
+ * admin/sessions.js Session monitoring and management.
  */
 
 import { Router } from "express";
@@ -9,7 +9,7 @@ import { getAllSessions } from "../../sessionStore.js";
 
 const router = Router();
 
-// GET /api/admin/sessions — paginated session list
+// GET /api/admin/sessions  paginated session list
 router.get("/", requirePermission("sessions.view"), async (req, res) => {
   try {
     const page   = Math.max(1, parseInt(req.query.page  ?? "1"));
@@ -50,7 +50,7 @@ router.get("/", requirePermission("sessions.view"), async (req, res) => {
   }
 });
 
-// GET /api/admin/sessions/live — in-memory active sessions
+// GET /api/admin/sessions/live  in-memory active sessions
 router.get("/live", requirePermission("sessions.view"), (req, res) => {
   try {
     const live = getAllSessions();

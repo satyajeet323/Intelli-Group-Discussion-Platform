@@ -1,5 +1,5 @@
 /**
- * ApiKey.js — Encrypted API key storage with usage tracking and status management.
+ * ApiKey.js Encrypted API key storage with usage tracking and status management.
  *
  * Keys are encrypted at rest using AES-256-GCM.
  * The encryption key is derived from API_KEY_ENCRYPTION_SECRET in .env.

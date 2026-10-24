@@ -1,10 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { adminAuth, AdminApiError } from "@/lib/adminApi";
+import { adminAuth, AdminApiError, isAdminAuthenticated } from "@/lib/adminApi";
 import { useTheme } from "@/hooks/useTheme";
 import { Shield, Sun, Moon, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/admin/login")({
+  beforeLoad: () => {
+    if (isAdminAuthenticated()) {
+      throw redirect({ to: "/admin/dashboard" });
+    }
+    // Administrators use the same normal login page as regular users
+    throw redirect({ to: "/login" });
+  },
   component: AdminLogin,
 });
 
@@ -102,7 +109,7 @@ function AdminLogin() {
         </form>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          <a href="/dashboard" className="hover:text-foreground transition-colors">← Back to main app</a>
+          <Link to="/dashboard" className="hover:text-foreground transition-colors">← Back to main app</Link>
         </p>
       </div>
     </div>
