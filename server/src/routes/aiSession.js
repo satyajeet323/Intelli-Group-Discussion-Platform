@@ -1,9 +1,9 @@
 /**
- * aiSession.js — AI Session routes
+ * aiSession.js AI Session routes
  *
- * POST /api/ai-session/start    — Generate topic + opening AI message
- * POST /api/ai-session/turn     — Send user transcript, get AI response
- * POST /api/ai-session/report   — Delegate session evaluation to ML service
+ * POST /api/ai-session/start     Generate topic + opening AI message
+ * POST /api/ai-session/turn      Send user transcript, get AI response
+ * POST /api/ai-session/report    Delegate session evaluation to ML service
  */
 
 import { Router } from "express";

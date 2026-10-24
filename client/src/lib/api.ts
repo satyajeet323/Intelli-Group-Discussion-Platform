@@ -551,7 +551,7 @@ export const fluency = {
     apiFetch<FluencyScoreResult>("/api/fluency/score", {
       method:  "POST",
       body:    { transcript, topic, prosody },
-      timeout: 60_000,
+      timeout: 90_000,
     }),
 
   /** Check if the Python analysis server is reachable. */

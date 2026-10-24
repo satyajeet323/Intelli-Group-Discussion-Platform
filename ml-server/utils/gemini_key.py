@@ -56,7 +56,7 @@ def get_gemini_key() -> str | None:
         now = time.time()
         if _cached["value"] and (now - _cached["ts"]) < _CACHE_TTL:
             return _cached["value"]
-        key = _fetch_from_node() or os.getenv("GEMINI_API_KEY")
+        key = os.getenv("GEMINI_API_KEY") or _fetch_from_node()
         if key:
             _cached["value"] = key
             _cached["ts"]    = now

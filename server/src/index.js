@@ -298,6 +298,7 @@ app.post("/api/fluency/score", async (req, res) => {
   }
   try {
     const data = await scoreTranscript(transcript, topic, prosody ?? {});
+    res.json(data);
   } catch (err) {
     console.error("[fluency] score error:", err.message);
     const status = err.response?.status || err.status || 502;
