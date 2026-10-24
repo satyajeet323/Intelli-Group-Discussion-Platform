@@ -1,5 +1,5 @@
 /**
- * Evaluation.js — MongoDB model for AI session & discussion evaluations.
+ * Evaluation.js MongoDB model for AI session & discussion evaluations.
  *
  * Persists detailed, Gemini-generated performance reports per user and session.
  */

@@ -1,5 +1,5 @@
 /**
- * SystemConfig.js — Key-value system configuration store.
+ * SystemConfig.js Key-value system configuration store.
  */
 
 import { mongoose } from "../db.js";

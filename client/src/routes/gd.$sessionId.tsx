@@ -129,19 +129,56 @@ function FluencySession() {
   const topicRef       = useRef("");
   const dbSessionIdRef = useRef<string | null>(null);
 
-  topicRef.current       = topic;
+  const [customTopic, setCustomTopic] = useState<string>("");
+  const activeTopic = customTopic || topic;
+
+  topicRef.current       = activeTopic;
   dbSessionIdRef.current = dbSessionId;
+
+  // ── Fetch existing session topic from DB if routeId is an existing ID ─────────
+  useEffect(() => {
+    if (routeId && routeId !== "new") {
+      sessionsApi.get(routeId).then((res) => {
+        const t = (res.session as { topic?: string })?.topic;
+        if (t) setCustomTopic(t);
+      }).catch(() => {});
+    }
+  }, [routeId]);
+
+  // ── Restore previous analysis result from sessionStorage if user refreshed ────
+  useEffect(() => {
+    const currentId = routeId !== "new" ? routeId : dbSessionId;
+    if (!currentId) return;
+    try {
+      const savedRes = sessionStorage.getItem(`gd-result-${currentId}`);
+      if (savedRes) {
+        const parsed = JSON.parse(savedRes);
+        if (parsed?.scores) {
+          setResult(parsed);
+          setPhase("done");
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [routeId, dbSessionId]);
 
   // ── Create DB session once topic is ready ──────────────────────────────────
   useEffect(() => {
-    if (!ready || !topic || dbSessionId || dbCreating.current || !getToken()) return;
+    if (!ready || !activeTopic || dbSessionId || dbCreating.current || !getToken()) return;
     dbCreating.current = true;
-    sessionsApi.create({ type: "individual", topic })
-      .then((res) => setDbSessionId(res.session.sessionId))
+    sessionsApi.create({ type: "individual", topic: activeTopic })
+      .then((res) => {
+        const sid = res.session.sessionId;
+        setDbSessionId(sid);
+        if (routeId === "new") {
+          navigate({ to: "/gd/$sessionId", params: { sessionId: sid }, replace: true });
+        }
+      })
       .catch((err) => console.warn("[Fluency] DB create failed:", err.message))
       .finally(() => { dbCreating.current = false; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, topic]);
+  }, [ready, activeTopic]);
 
   // ── Check Python server is reachable ───────────────────────────────────────
   useEffect(() => {
@@ -150,12 +187,13 @@ function FluencySession() {
       .catch(() => setPythonDown(true));
   }, []);
 
-  // ── Prevent accidental navigation during recording ─────────────────────────
+  // ── Prevent accidental navigation ONLY during recording / uploading / scoring ──
   useEffect(() => {
+    if (phase !== "recording" && phase !== "uploading" && phase !== "scoring") return;
     const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
-  }, []);
+  }, [phase]);
 
   // ── Reset for new topic ────────────────────────────────────────────────────
   const handleRegenerate = useCallback(() => {
@@ -163,15 +201,19 @@ function FluencySession() {
       if (recIntervalRef.current) { window.clearInterval(recIntervalRef.current); recIntervalRef.current = null; }
       try { mediaRecRef.current?.stop(); } catch { /* ignore */ }
     }
+    if (dbSessionId) {
+      try { sessionStorage.removeItem(`gd-result-${dbSessionId}`); } catch { /* ignore */ }
+    }
     setPhase("idle");
     setResult(null);
     setErrorMsg("");
     setRecDuration(0);
     setUploadPct(0);
     setDbSessionId(null);
+    setCustomTopic("");
     dbCreating.current = false;
     regenerate();
-  }, [phase, regenerate]);
+  }, [phase, regenerate, dbSessionId]);
 
   // ── Process audio: upload → transcribe → score ─────────────────────────────
   const processAudio = useCallback(async (blob: Blob, mimeType: string) => {
@@ -215,8 +257,11 @@ function FluencySession() {
       setResult(sessionResult);
       setPhase("done");
 
-      // Persist to DB (best-effort)
-      const dbSid = dbSessionIdRef.current;
+      // Cache result in sessionStorage so it survives accidental refresh
+      const dbSid = dbSessionIdRef.current || (routeId !== "new" ? routeId : null);
+      if (dbSid) {
+        try { sessionStorage.setItem(`gd-result-${dbSid}`, JSON.stringify(sessionResult)); } catch { /* ignore */ }
+      }
       if (dbSid && getToken()) {
         reports.submit(dbSid, {
           fluency:       scores.fillers_score,
@@ -319,7 +364,7 @@ function FluencySession() {
                 </div>
               ) : (
                 <p className="font-display text-sm sm:text-base font-semibold leading-snug truncate">
-                  {!ready ? <span className="text-muted-foreground animate-pulse">Generating topic…</span> : topic}
+                  {!ready && !activeTopic ? <span className="text-muted-foreground animate-pulse">Generating topic…</span> : activeTopic}
                 </p>
               )}
             </div>

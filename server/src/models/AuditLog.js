@@ -1,5 +1,5 @@
 /**
- * AuditLog.js — Immutable audit trail for all admin actions.
+ * AuditLog.js Immutable audit trail for all admin actions.
  */
 
 import { mongoose } from "../db.js";
@@ -25,7 +25,7 @@ const auditLogSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    // Audit logs are append-only — disable updates
+    // Audit logs are append-only disable updates
     strict: true,
   }
 );

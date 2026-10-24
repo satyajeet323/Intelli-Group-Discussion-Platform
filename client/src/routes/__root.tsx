@@ -108,11 +108,7 @@ function RootComponent() {
     };
   }, []);
 
-  const adminPayload = decodeJwtPayload(adminToken);
-  const hasAdmin =
-    !!adminPayload &&
-    !!user?.email &&
-    (adminPayload.email as string)?.toLowerCase() === user.email.toLowerCase();
+  const hasAdmin = user?.role === "admin" || user?.isAdmin;
 
   // Keep theme class applied on every render
   useTheme();
@@ -202,8 +198,9 @@ function RootComponent() {
             />
 
             {hasAdmin && (
-              <a
-                href="/admin/dashboard"
+              <Link
+                to="/admin"
+                id="header-admin-access-btn"
                 className="hidden sm:inline-flex items-center gap-2 text-xs px-3 py-1.5"
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
@@ -216,8 +213,8 @@ function RootComponent() {
                 }}
               >
                 <Shield className="h-3 w-3" />
-                Admin Panel
-              </a>
+                Admin Access
+              </Link>
             )}
 
             <Link

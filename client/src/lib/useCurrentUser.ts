@@ -32,6 +32,8 @@ function notify(u: User | null) {
   _listeners.forEach((fn) => fn(u));
 }
 
+import { setAdminToken, clearAdminToken as clearAdminCacheToken } from "@/lib/adminApi";
+
 /** Fetch once; all callers share the same promise. */
 function fetchOnce(): Promise<User | null> {
   if (!getToken()) return Promise.resolve(null);
@@ -41,6 +43,13 @@ function fetchOnce(): Promise<User | null> {
   _promise = auth
     .me()
     .then((res) => {
+      if (res.user?.role === "admin" || res.user?.isAdmin) {
+        if (res.adminToken) {
+          setAdminToken(res.adminToken);
+        }
+      } else {
+        clearAdminCacheToken();
+      }
       notify(res.user);
       return res.user;
     })

@@ -1,5 +1,5 @@
 /**
- * admin/auth.js — Admin authentication routes.
+ * admin/auth.js Admin authentication routes.
  * POST /api/admin/auth/login
  * GET  /api/admin/auth/me
  * POST /api/admin/auth/logout (audit only)
@@ -45,7 +45,7 @@ router.post(
 
       const token = signAdminToken(admin);
 
-      // Audit — attach admin to req temporarily so audit() can read it
+      // Audit attach admin to req temporarily so audit() can read it
       req.admin = admin.toObject ? admin.toObject() : admin;
       await audit(req, "Admin login", "auth", {
         severity: "info",

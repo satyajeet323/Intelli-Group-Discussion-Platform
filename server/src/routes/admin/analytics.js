@@ -1,5 +1,5 @@
 /**
- * admin/analytics.js — Platform analytics and system monitoring.
+ * admin/analytics.js Platform analytics and system monitoring.
  */
 
 import { Router } from "express";
@@ -11,7 +11,7 @@ import { getAllSessions } from "../../sessionStore.js";
 
 const router = Router();
 
-// In-memory metrics store (resets on restart — use Redis in production)
+// In-memory metrics store (resets on restart use Redis in production)
 const metrics = {
   apiCalls:       0,
   apiErrors:      0,

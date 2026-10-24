@@ -1,5 +1,5 @@
 /**
- * Notification.js — Admin-created notifications/announcements.
+ * Notification.js Admin-created notifications/announcements.
  */
 
 import { mongoose } from "../db.js";

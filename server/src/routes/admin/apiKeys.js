@@ -1,19 +1,19 @@
 /**
- * admin/apiKeys.js — API Key Management routes (Super Admin only).
+ * admin/apiKeys.jsAPI Key Management routes (Super Admin only).
  *
- * Route order matters — specific paths must come before wildcard /:param routes.
+ * Route order matters  specific paths must come before wildcard /:param routes.
  *
- * POST   /api/admin/api-keys                         — add a new key
- * GET    /api/admin/api-keys                         — list all providers + summary
- * GET    /api/admin/api-keys/internal/active-key/:p  — internal: get active key (service-to-service)
- * GET    /api/admin/api-keys/provider/:provider       — list keys for a provider
- * GET    /api/admin/api-keys/:id/reveal               — reveal decrypted key value
- * POST   /api/admin/api-keys/:id/rotate               — rotate key value
- * POST   /api/admin/api-keys/:id/activate             — set status → active
- * POST   /api/admin/api-keys/:id/deactivate           — set status → deactivated
- * POST   /api/admin/api-keys/:id/reset-usage          — reset usage counters
- * PATCH  /api/admin/api-keys/:id                      — update metadata
- * DELETE /api/admin/api-keys/:id                      — delete key
+ * POST   /api/admin/api-keys                         add a new key
+ * GET    /api/admin/api-keys                         list all providers + summary
+ * GET    /api/admin/api-keys/internal/active-key/:p  internal: get active key (service-to-service)
+ * GET    /api/admin/api-keys/provider/:provider       list keys for a provider
+ * GET    /api/admin/api-keys/:id/reveal               reveal decrypted key value
+ * POST   /api/admin/api-keys/:id/rotate               rotate key value
+ * POST   /api/admin/api-keys/:id/activate             set status → active
+ * POST   /api/admin/api-keys/:id/deactivate           set status → deactivated
+ * POST   /api/admin/api-keys/:id/reset-usage          reset usage counters
+ * PATCH  /api/admin/api-keys/:id                      update metadata
+ * DELETE /api/admin/api-keys/:id                      delete key
  */
 
 import { Router } from "express";
@@ -25,7 +25,7 @@ import { validate } from "../../middleware/validate.js";
 
 const router = Router();
 
-// ── POST / — add a new key ────────────────────────────────────────────────────
+// ── POST / add a new key ────────────────────────────────────────────────────
 router.post(
   "/",
   requireSuperAdmin,
@@ -88,7 +88,7 @@ router.post(
   }
 );
 
-// ── GET / — provider summary ──────────────────────────────────────────────────
+// ── GET / provider summary ──────────────────────────────────────────────────
 router.get("/", requirePermission("apiKeys.view"), async (req, res) => {
   try {
     const summary = await apiKeyService.getProviderSummary();
@@ -99,7 +99,7 @@ router.get("/", requirePermission("apiKeys.view"), async (req, res) => {
   }
 });
 
-// ── GET /internal/active-key/:provider — service-to-service ──────────────────
+// ── GET /internal/active-key/:provider service-to-service ──────────────────
 // Must be declared before /:provider to avoid being swallowed by the wildcard.
 router.get("/internal/active-key/:provider", async (req, res) => {
   const secret   = req.headers["x-internal-secret"];
@@ -116,7 +116,7 @@ router.get("/internal/active-key/:provider", async (req, res) => {
   }
 });
 
-// ── GET /provider/:provider — list keys for a provider ───────────────────────
+// ── GET /provider/:provider list keys for a provider ───────────────────────
 // Uses a /provider/ prefix so it doesn't conflict with /:id sub-routes.
 router.get("/provider/:provider", requirePermission("apiKeys.view"), async (req, res) => {
   try {
@@ -128,7 +128,7 @@ router.get("/provider/:provider", requirePermission("apiKeys.view"), async (req,
   }
 });
 
-// ── GET /:id/reveal — reveal decrypted key ────────────────────────────────────
+// ── GET /:id/reveal reveal decrypted key ────────────────────────────────────
 router.get("/:id/reveal", requireSuperAdmin, async (req, res) => {
   try {
     const key = await ApiKey.findById(req.params.id);
@@ -253,7 +253,7 @@ router.post("/:id/reset-usage", requireSuperAdmin, async (req, res) => {
   }
 });
 
-// ── PATCH /:id — update metadata ──────────────────────────────────────────────
+// ── PATCH /:id update metadata ──────────────────────────────────────────────
 router.patch(
   "/:id",
   requireSuperAdmin,

@@ -69,11 +69,7 @@ export function AppSidebar() {
     : "?";
   const planLabel = user?.plan === "pro" ? "PRO" : "FREE";
 
-  const adminPayload = decodeJwtPayload(adminToken);
-  const hasAdmin =
-    !!adminPayload &&
-    !!user?.email &&
-    (adminPayload.email as string)?.toLowerCase() === user.email.toLowerCase();
+  const hasAdmin = user?.role === "admin" || user?.isAdmin;
 
   return (
     <Sidebar
@@ -190,13 +186,14 @@ export function AppSidebar() {
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
             {hasAdmin && (
-              <a
-                href="/admin/dashboard"
+              <Link
+                to="/admin"
+                id="sidebar-admin-access-btn"
                 className="flex items-center gap-2 w-full"
                 style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ib-purple)" }}
               >
-                <Shield className="h-3.5 w-3.5" /> Admin Panel
-              </a>
+                <Shield className="h-3.5 w-3.5" /> Admin Access
+              </Link>
             )}
           </div>
         )}

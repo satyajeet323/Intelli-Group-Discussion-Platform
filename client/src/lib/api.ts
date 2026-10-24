@@ -71,10 +71,13 @@ export async function apiFetch<T = unknown>(
 
     window.clearTimeout(timer);
 
-    // Handle 401 — clear token and redirect
+    // Handle 401 — clear token and navigate safely client-side
     if (res.status === 401) {
       clearToken();
-      window.location.href = "/login";
+      if (typeof window !== "undefined" && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        window.history.pushState(null, "", "/login");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
       throw new ApiError("Session expired. Please log in again.", 401);
     }
 
@@ -124,7 +127,9 @@ export type User = {
   };
 };
 
-export type AuthResponse = { success: boolean; token: string; user: User };
+import { setAdminToken, clearAdminToken } from "./adminApi";
+
+export type AuthResponse = { success: boolean; token: string; adminToken?: string | null; user: User };
 
 export const auth = {
   register: (name: string, email: string, password: string) =>
@@ -132,17 +137,29 @@ export const auth = {
       method: "POST",
       body:   { name, email, password },
       auth:   false,
-    }).then((res) => { setToken(res.token); return res; }),
+    }).then((res) => {
+      clearAdminToken();
+      setToken(res.token);
+      return res;
+    }),
 
   login: (email: string, password: string) =>
     apiFetch<AuthResponse>("/api/auth/login", {
       method: "POST",
       body:   { email, password },
       auth:   false,
-    }).then((res) => { setToken(res.token); return res; }),
+    }).then((res) => {
+      setToken(res.token);
+      if (res.adminToken) {
+        setAdminToken(res.adminToken);
+      } else {
+        clearAdminToken();
+      }
+      return res;
+    }),
 
   me: () =>
-    apiFetch<{ success: boolean; user: User }>("/api/auth/me"),
+    apiFetch<{ success: boolean; user: User; adminToken?: string | null }>("/api/auth/me"),
 
   updateProfile: (data: { name?: string; currentPassword?: string; newPassword?: string }) =>
     apiFetch<{ success: boolean; user: User }>("/api/auth/profile", {
@@ -158,6 +175,7 @@ export const auth = {
 
   logout: () => {
     clearToken();
+    clearAdminToken();
     // Clear user cache using direct import (no longer circular)
     // The clearUserCache function is imported at module level
     if (typeof window !== "undefined") {

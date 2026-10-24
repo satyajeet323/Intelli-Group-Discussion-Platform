@@ -208,9 +208,14 @@ function Dashboard() {
               <Link to="/group-session" className="btn-ghost inline-flex items-center gap-2">
                 <Users className="h-4 w-4" /> Group Session
               </Link>
-              {user?.isAdmin && (
-                <Link to="/admin/sessions" className="btn-ghost inline-flex items-center gap-2" style={{ borderColor: "var(--ib-amber)", color: "var(--ib-amber)" }}>
-                  <ShieldCheck className="h-4 w-4" /> Admin Panel
+              {(user?.role === "admin" || user?.isAdmin) && (
+                <Link
+                  to="/admin"
+                  id="admin-access-btn"
+                  className="btn-ghost inline-flex items-center gap-2"
+                  style={{ borderColor: "var(--ib-amber)", color: "var(--ib-amber)" }}
+                >
+                  <ShieldCheck className="h-4 w-4" /> Admin Access
                 </Link>
               )}
             </div>

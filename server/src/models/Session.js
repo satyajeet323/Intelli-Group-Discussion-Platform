@@ -1,5 +1,5 @@
 /**
- * Session.js — MongoDB schema for group discussion sessions.
+ * Session.js  MongoDB schema for group discussion sessions.
  */
 
 import { mongoose } from "../db.js";
@@ -15,7 +15,7 @@ const reportSchema = new mongoose.Schema(
     overallScore: { type: Number, min: 0, max: 10, default: 0 },
     feedback:     { type: String, default: "" },
     aiFeedback:   { type: String, default: "" },
-    // Peer-rating aggregates — populated after ratings are collected
+    // Peer-rating aggregates  populated after ratings are collected
     peerScore:    { type: Number, min: 0, max: 10, default: null },
     peerFeedback: { type: String, default: "" },
     combinedScore:{ type: Number, min: 0, max: 10, default: null },
@@ -57,7 +57,7 @@ const peerRatingSchema = new mongoose.Schema(
     raterName:     { type: String, required: true },
     rateeId:       { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     rateeName:     { type: String, required: true },
-    // Four criteria, each 1–5
+    // Four criteria, each 1to5
     communication: { type: Number, min: 1, max: 5, required: true },
     relevance:     { type: Number, min: 1, max: 5, required: true },
     confidence:    { type: Number, min: 1, max: 5, required: true },

@@ -7,6 +7,9 @@
 import "dotenv/config";
 import { connectDB } from "./db.js";
 import { User } from "./models/User.js";
+import { AdminUser } from "./models/AdminUser.js";
+import { AdminRole } from "./models/AdminRole.js";
+import { PERMISSIONS } from "./models/permissions.js";
 
 const email = process.argv[2];
 if (!email) {
@@ -25,6 +28,32 @@ const user = await User.findOneAndUpdate(
 if (!user) {
   console.error(`No user found with email: ${email}`);
   process.exit(1);
+}
+
+let superRole = await AdminRole.findOne({ name: "Super Admin" });
+if (!superRole) {
+  superRole = await AdminRole.create({
+    name: "Super Admin",
+    description: "Full access to all platform features",
+    color: "#ef4444",
+    permissions: [...PERMISSIONS],
+    isSystem: true,
+  });
+}
+
+let adminUser = await AdminUser.findOne({ email: user.email.toLowerCase() });
+if (!adminUser) {
+  await AdminUser.create({
+    name: user.name,
+    email: user.email.toLowerCase(),
+    password: user.password,
+    role: superRole._id,
+    isSuperAdmin: true,
+    isActive: true,
+  });
+} else {
+  adminUser.isActive = true;
+  await adminUser.save();
 }
 
 console.log(`✓ Promoted ${user.name} (${user.email}) to admin role.`);

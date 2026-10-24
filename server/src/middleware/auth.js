@@ -30,7 +30,13 @@ export function requireAuth(req, res, next) {
 
 export function signToken(user) {
   return jwt.sign(
-    { id: user._id.toString(), name: user.name, email: user.email },
+    {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role ?? "user",
+      isAdmin: user.role === "admin",
+    },
     process.env.JWT_SECRET ?? "fallback_secret",
     { expiresIn: process.env.JWT_EXPIRES_IN ?? "7d" }
   );

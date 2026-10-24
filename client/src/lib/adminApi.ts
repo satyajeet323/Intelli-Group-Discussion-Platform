@@ -5,9 +5,10 @@
 
 const BASE_URL = (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
 const ADMIN_TOKEN_KEY = "gdbot_admin_token";
+const USER_TOKEN_KEY = "gdbot_token";
 
 export function getAdminToken(): string | null {
-  return localStorage.getItem(ADMIN_TOKEN_KEY);
+  return localStorage.getItem(ADMIN_TOKEN_KEY) ?? localStorage.getItem(USER_TOKEN_KEY);
 }
 export function setAdminToken(t: string) {
   localStorage.setItem(ADMIN_TOKEN_KEY, t);
@@ -19,7 +20,32 @@ export function clearAdminToken() {
   window.dispatchEvent(new CustomEvent("adminTokenChange", { detail: null }));
 }
 export function isAdminAuthenticated(): boolean {
-  return !!getAdminToken();
+  const adminToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+  if (adminToken) {
+    try {
+      const parts = adminToken.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (!payload.exp || payload.exp * 1000 > Date.now()) {
+          return true;
+        }
+      }
+    } catch {
+      // fallback to user token
+    }
+  }
+
+  const userToken = localStorage.getItem(USER_TOKEN_KEY);
+  if (!userToken) return false;
+  try {
+    const parts = userToken.split(".");
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (payload.exp && payload.exp * 1000 < Date.now()) return false;
+    return payload.role === "admin" || payload.isAdmin === true;
+  } catch {
+    return false;
+  }
 }
 
 export class AdminApiError extends Error {
@@ -63,7 +89,10 @@ export async function adminFetch<T = unknown>(
 
     if (res.status === 401) {
       clearAdminToken();
-      window.location.href = "/admin/login";
+      if (typeof window !== "undefined" && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        window.history.pushState(null, "", "/login");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
       throw new AdminApiError("Session expired.", 401);
     }
 
@@ -208,7 +237,11 @@ export const adminAuth = {
   logout: async () => {
     try { await adminFetch("/api/admin/auth/logout", { method: "POST" }); } catch {}
     clearAdminToken();
-    window.location.href = "/admin/login";
+    localStorage.removeItem(USER_TOKEN_KEY);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("user-logout"));
+    }
+    window.location.href = "/login";
   },
 };
 

@@ -47,10 +47,14 @@ import {
   removeParticipant,
   updateParticipantState,
   getParticipant,
+  createSession,
   serializeSession,
   serializeParticipant,
 } from "./sessionStore.js";
 import { Session } from "./models/Session.js";
+
+// Grace timer map for empty sessions to allow smooth tab refresh and reconnection
+const sessionEndTimers = new Map(); // sessionId -> Timeout
 
 // ── Rate limiting (simple in-memory) ─────────────────────────────────────────
 const MESSAGE_LIMIT   = 30;   // max messages per window
@@ -108,7 +112,7 @@ export function registerSocketHandlers(io, socket) {
   };
 
   // ── join-session ────────────────────────────────────────────────────────────
-  socket.on("join-session", ({ sessionId, name, userId } = {}) => {
+  socket.on("join-session", async ({ sessionId, name, userId } = {}) => {
     // Input validation
     if (!sessionId || typeof sessionId !== "string") {
       return emitError("MISSING_SESSION_ID", "sessionId is required.");
@@ -124,8 +128,28 @@ export function registerSocketHandlers(io, socket) {
       return emitError("MISSING_NAME", "name is required.");
     }
 
-    // Session must exist in the in-memory store
-    if (!sessionExists(sid)) {
+    // Cancel any pending empty-session grace timer (participant reconnected after refresh)
+    if (sessionEndTimers.has(sid)) {
+      clearTimeout(sessionEndTimers.get(sid));
+      sessionEndTimers.delete(sid);
+      console.log(`[ws] Reconnection detected: cancelled pending session end for ${sid}`);
+    }
+
+    // Ensure session exists in the in-memory store, or rehydrate it from MongoDB
+    let session = getSession(sid);
+    if (!session) {
+      try {
+        const dbSession = await Session.findOne({ sessionId: sid, status: { $ne: "ended" } });
+        if (dbSession) {
+          session = createSession(dbSession.sessionId, dbSession.topic, dbSession.topicSource);
+          console.log(`[ws] Rehydrated session ${sid} from MongoDB into memory store`);
+        }
+      } catch (err) {
+        console.error("[ws] Error checking session from DB:", err.message);
+      }
+    }
+
+    if (!session) {
       return emitError(
         "SESSION_NOT_FOUND",
         `Session "${sid}" not found. Create it first or check the ID.`
@@ -413,35 +437,49 @@ function handleLeave(io, socket, sessionId, name) {
   if (userId) {
     const now = new Date();
     if (remainingCount === 0) {
-      // Last person left — end the session
-      Session.findOneAndUpdate(
-        { sessionId, status: { $ne: "ended" } },
-        {
-          $set: {
-            status:  "ended",
-            endedAt: now,
-          },
-          $inc: { duration: 0 }, // will be recalculated below
+      // Last person disconnected — don't end instantly; grant a 30s grace window
+      // so if the user simply refreshed their browser or briefly lost Wi-Fi, the session remains intact.
+      if (sessionEndTimers.has(sessionId)) {
+        clearTimeout(sessionEndTimers.get(sessionId));
+      }
+      const timer = setTimeout(async () => {
+        sessionEndTimers.delete(sessionId);
+        const s = getSession(sessionId);
+        if (!s || s.participants.size === 0) {
+          const endNow = new Date();
+          try {
+            const doc = await Session.findOneAndUpdate(
+              { sessionId, status: { $ne: "ended" } },
+              {
+                $set: {
+                  status:  "ended",
+                  endedAt: endNow,
+                },
+              }
+            );
+            if (doc) {
+              const duration = Math.round((endNow - doc.startedAt) / 1000);
+              await Session.updateOne(
+                { sessionId },
+                {
+                  $set: {
+                    duration,
+                    "participants.$[p].isActive": false,
+                    "participants.$[p].leftAt":   endNow,
+                  },
+                },
+                { arrayFilters: [{ "p.isActive": true }] }
+              );
+              console.log(`[ws] Session ${sessionId} ended after grace period | duration: ${duration}s`);
+            }
+          } catch (err) {
+            console.error("[ws] session end persist error:", err.message);
+          }
         }
-      ).then(async (doc) => {
-        if (doc) {
-          const duration = Math.round((now - doc.startedAt) / 1000);
-          await Session.updateOne(
-            { sessionId },
-            {
-              $set: {
-                duration,
-                "participants.$[p].isActive": false,
-                "participants.$[p].leftAt":   now,
-              },
-            },
-            { arrayFilters: [{ "p.isActive": true }] }
-          );
-          console.log(`[ws] Session ${sessionId} ended | duration: ${duration}s`);
-        }
-      }).catch((err) => console.error("[ws] session end persist error:", err.message));
+      }, 30000);
+      sessionEndTimers.set(sessionId, timer);
     } else {
-      // Mark ALL entries for this participant as left (handles duplicate entries)
+      // Other participants remain — update this participant's active state
       Session.updateOne(
         { sessionId },
         {

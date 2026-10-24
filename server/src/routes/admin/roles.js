@@ -1,5 +1,5 @@
 /**
- * admin/roles.js — Role management routes.
+ * admin/roles.js Role management routes.
  */
 
 import { Router } from "express";

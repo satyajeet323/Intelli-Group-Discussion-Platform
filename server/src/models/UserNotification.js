@@ -1,5 +1,5 @@
 /**
- * UserNotification.js — Per-user notification delivery & read state.
+ * UserNotification.jsPer-user notification delivery & read state.
  * One document per (user, notification) pair.
  */
 

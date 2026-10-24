@@ -1,5 +1,5 @@
 /**
- * AdminRole.js — Custom roles with configurable permissions.
+ * AdminRole.js Custom roles with configurable permissions.
  */
 
 import { mongoose } from "../db.js";
