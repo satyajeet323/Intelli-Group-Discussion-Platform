@@ -8,7 +8,7 @@ The ml-server cannot run on Vercel because:
 - Audio processing takes up to 2 minutes (Vercel max: 60s)
 - Needs writable temp filesystem
 
-## Option 1: Hugging Face Spaces (Recommended — Free)
+## Option 1: Hugging Face Spaces (Recommended Free)
 
 1. Create account at huggingface.co
 2. New Space → Docker SDK → name: `intellibot-ml`
