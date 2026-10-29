@@ -1,4 +1,0 @@
-{
-  "buildCommand": "echo 'ERROR: Deploy this server to Railway/Render/Fly.io, not Vercel. See DEVELOPER_GUIDE.md'",
-  "outputDirectory": "."
-}
