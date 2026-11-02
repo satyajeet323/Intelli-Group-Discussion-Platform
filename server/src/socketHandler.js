@@ -189,7 +189,7 @@ export function registerSocketHandlers(io, socket) {
     // Join the Socket.io room (isolates broadcasts to this session)
     socket.join(sid);
 
-    const session = getSession(sid);
+    session = getSession(sid);
 
     // Build list of existing peers (everyone except the new joiner)
     const peers = [...session.participants.values()]
